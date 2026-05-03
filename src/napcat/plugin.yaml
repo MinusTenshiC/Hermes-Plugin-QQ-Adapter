@@ -1,0 +1,15 @@
+name: napcat-platform
+kind: platform
+version: 1.0.0
+description: >
+  NapCat / OneBot v11 QQ gateway adapter for Hermes Agent.
+  Runs a WebSocket server that NapCat connects to as a client,
+  enabling the Hermes AI agent to send and receive messages on QQ.
+  Supports private and group messaging, image send/receive, voice
+  transcription via STT, and group administration tools (kick, mute,
+  whole-group mute, admin management, member and group info queries).
+author: Hermes-QQ Team
+requires_env:
+  - NAPCAT_WS_HOST
+  - NAPCAT_WS_PORT
+  - NAPCAT_TOKEN

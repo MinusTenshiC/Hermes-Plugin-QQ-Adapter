@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes-QQ · NapCat</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e3eb;
+    --muted: #8b8fa3;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--red);
+  }
+  header .dot.ok { background: var(--green); }
+  header .dot.waiting { background: var(--yellow); }
+  nav {
+    display: flex;
+    gap: 4px;
+    padding: 12px 24px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    transition: .15s;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* Cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card h3 {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+  }
+  .card .value { font-size: 28px; font-weight: 700; }
+  .card .value.ok { color: var(--green); }
+  .card .value.warn { color: var(--yellow); }
+  .card .value.err { color: var(--red); }
+
+  /* Logs */
+  .log-entry {
+    border-left: 3px solid var(--border);
+    padding: 8px 12px;
+    margin: 4px 0;
+    font-size: 13px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .log-entry.in { border-left-color: var(--accent); }
+  .log-entry.out { border-left-color: var(--green); }
+  .log-entry .meta { color: var(--muted); font-size: 11px; }
+  .log-entry .preview { margin-top: 2px; }
+
+  /* Config */
+  .cfg-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cfg-row:last-child { border-bottom: none; }
+  .cfg-row .label { font-weight: 500; }
+  .cfg-row .source { font-size: 11px; color: var(--muted); }
+  .cfg-row input, .cfg-row select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 13px;
+    width: 320px;
+  }
+  .cfg-row input:disabled { opacity: .4; }
+
+  /* Chat */
+  #chat-log {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: var(--bg);
+    font-size: 13px;
+  }
+  #chat-log .bubble {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin: 6px 0;
+  }
+  #chat-log .bubble.user {
+    background: var(--accent);
+    margin-left: auto;
+    color: #fff;
+  }
+  #chat-log .bubble.bot {
+    background: var(--surface);
+    margin-right: auto;
+  }
+  .chat-bar {
+    display: flex;
+    gap: 8px;
+  }
+  .chat-bar input { flex: 1; }
+  .chat-bar select { width: 100px; }
+
+  /* Shared */
+  button.btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button.btn:hover { opacity: .85; }
+  button.btn.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  input, select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .flex { display: flex; align-items: center; gap: 8px; }
+  .gap { gap: 16px; }
+  .mt { margin-top: 16px; }
+  .mb { margin-bottom: 16px; }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: .3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .toast.err { background: var(--red); color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="dot" id="status-dot"></div>
+  <h1>Hermes-QQ</h1>
+  <span style="font-size:13px;color:var(--muted)" id="header-info"></span>
+</header>
+
+<nav>
+  <button class="active" data-tab="dashboard">仪表盘</button>
+  <button data-tab="logs">消息日志</button>
+  <button data-tab="config">配置管理</button>
+  <button data-tab="chat">对话测试</button>
+</nav>
+
+<main>
+  <!-- Dashboard -->
+  <section class="tab active" id="tab-dashboard">
+    <div class="grid" id="dashboard-cards"></div>
+    <h3 style="margin-top:20px;margin-bottom:12px">连接详情</h3>
+    <div id="connections-table"></div>
+  </section>
+
+  <!-- Logs -->
+  <section class="tab" id="tab-logs">
+    <div class="flex gap mb">
+      <select id="log-direction">
+        <option value="all">全部方向</option>
+        <option value="in">入站</option>
+        <option value="out">出站</option>
+      </select>
+      <select id="log-chattype">
+        <option value="all">全部类型</option>
+        <option value="dm">私聊</option>
+        <option value="group">群聊</option>
+      </select>
+      <span style="font-size:12px;color:var(--muted)" id="log-count"></span>
+      <button class="btn ghost" onclick="refreshLogs()">刷新</button>
+    </div>
+    <div id="log-list"></div>
+    <div class="flex mt" style="justify-content:center;gap:8px">
+      <button class="btn ghost" id="log-prev" onclick="loadLogs(-1)">上一页</button>
+      <span style="font-size:12px;color:var(--muted)" id="log-page-info"></span>
+      <button class="btn ghost" id="log-next" onclick="loadLogs(1)">下一页</button>
+    </div>
+  </section>
+
+  <!-- Config -->
+  <section class="tab" id="tab-config">
+    <div id="config-list"></div>
+    <button class="btn mt" onclick="saveConfig()">保存更改</button>
+  </section>
+
+  <!-- Chat Test -->
+  <section class="tab" id="tab-chat">
+    <div id="chat-log"><span style="color:var(--muted)">连接中...</span></div>
+    <div class="chat-bar">
+      <input id="chat-input" placeholder="输入测试消息..." onkeydown="if(event.key==='Enter')sendChat()">
+      <select id="chat-type">
+        <option value="dm">私聊</option>
+        <option value="group">群聊</option>
+      </select>
+      <button class="btn" onclick="sendChat()">发送</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- Tab switching ----
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'logs') refreshLogs();
+    if (btn.dataset.tab === 'config') refreshConfig();
+  });
+});
+
+// ---- Toast ----
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ---- Dashboard ----
+async function refreshDashboard() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+
+    const dot = document.getElementById('status-dot');
+    dot.className = 'dot ' + (d.status === 'ok' ? 'ok' : 'waiting');
+    document.getElementById('header-info').textContent =
+      (d.self_ids.length ? '在线: ' + d.self_ids.join(', ') : '等待连接...') +
+      ' · 运行: ' + fmtDur(d.uptime_seconds);
+
+    const cards = [
+      ['状态', d.status === 'ok' ? '● 已连接' : '◌ 等待中', d.status === 'ok' ? 'ok' : 'warn'],
+      ['连接数', d.connections, ''],
+      ['运行时长', fmtDur(d.uptime_seconds), ''],
+      ['收消息', d.counters.messages_received, ''],
+      ['发消息', d.counters.messages_sent, ''],
+      ['API错误', d.counters.api_errors, d.counters.api_errors > 0 ? 'err' : ''],
+      ['工具调用', d.counters.tool_calls, ''],
+      ['Token', d.config_summary.token_configured ? '已配置' : '未配置', d.config_summary.token_configured ? 'ok' : 'err'],
+      ['白名单用户', d.config_summary.allowed_users_count + ' 人', ''],
+      ['群白名单', d.config_summary.group_allowed_users_count + ' 群', ''],
+      ['全放行', d.config_summary.allow_all_users ? '是' : '否', d.config_summary.allow_all_users ? 'warn' : ''],
+    ];
+    document.getElementById('dashboard-cards').innerHTML = cards.map(([h, v, cls]) =>
+      `<div class="card"><h3>${h}</h3><div class="value ${cls}">${v}</div></div>`
+    ).join('');
+
+    document.getElementById('connections-table').innerHTML = d.per_connection.length
+      ? `<table style="width:100%;border-collapse:collapse">`
+        + `<tr style="color:var(--muted);font-size:12px">`
+        + `<th style="text-align:left;padding:6px">QQ号</th>`
+        + `<th>角色</th><th>运行时长</th><th>上次事件</th></tr>`
+        + d.per_connection.map(c => `<tr style="border-top:1px solid var(--border);font-size:13px">`
+          + `<td style="padding:6px">${c.self_id}</td>`
+          + `<td>${c.role}</td>`
+          + `<td>${fmtDur(c.uptime_seconds)}</td>`
+          + `<td>${fmtDur(c.idle_seconds)} 前</td></tr>`).join('')
+        + `</table>`
+      : `<span style="color:var(--muted);font-size:13px">无连接</span>`;
+  } catch (e) {
+    document.getElementById('status-dot').className = 'dot';
+  }
+}
+
+// ---- Logs ----
+let logOffset = 0;
+const LOG_PAGE = 50;
+
+async function refreshLogs() { logOffset = 0; await loadLogs(0); }
+
+async function loadLogs(dir) {
+  logOffset = Math.max(0, logOffset + dir * LOG_PAGE);
+  const dirFilter = document.getElementById('log-direction').value;
+  const ctFilter = document.getElementById('log-chattype').value;
+  try {
+    const r = await fetch(`/api/logs?limit=${LOG_PAGE}&offset=${logOffset}&direction=${dirFilter}&chat_type=${ctFilter}`);
+    const d = await r.json();
+    document.getElementById('log-list').innerHTML = d.entries.length
+      ? d.entries.map(e => `<div class="log-entry ${e.direction}">`
+        + `<div class="meta">${fmtTime(e.timestamp_iso)} · ${e.direction==='in'?'← 收':'→ 发'} · ${e.chat_type} · ${e.chat_id} · ${e.user_id||'-'} · ${e.status}</div>`
+        + `<div class="preview">${esc(e.content_preview)}</div></div>`).join('')
+      : '<span style="color:var(--muted)">暂无记录</span>';
+    document.getElementById('log-count').textContent = `共 ${d.total} 条`;
+    document.getElementById('log-page-info').textContent =
+      `第 ${Math.floor(logOffset/LOG_PAGE)+1} 页 (${logOffset+1}-${Math.min(logOffset+LOG_PAGE, d.total)} / ${d.total})`;
+    document.getElementById('log-prev').disabled = logOffset === 0;
+    document.getElementById('log-next').disabled = logOffset + LOG_PAGE >= d.total;
+  } catch (e) { /* ignore */ }
+}
+
+// ---- Config ----
+let configData = [];
+
+async function refreshConfig() {
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    configData = d.config;
+    document.getElementById('config-list').innerHTML = d.config.map(c =>
+      `<div class="cfg-row">
+        <div>
+          <div class="label">${c.key}</div>
+          <div class="source">来源: ${c.source} ${c.mutable ? '' : '(只读)'}</div>
+        </div>
+        <input id="cfg-${c.key}" value="${esc(c.value || '')}"
+          ${c.mutable ? '' : 'disabled'} data-key="${c.key}">
+      </div>`
+    ).join('');
+  } catch (e) { /* ignore */ }
+}
+
+async function saveConfig() {
+  const body = {};
+  for (const c of configData) {
+    if (!c.mutable) continue;
+    const el = document.getElementById('cfg-' + c.key);
+    if (el) body[c.key] = el.value;
+  }
+  try {
+    const r = await fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (Object.keys(d.updated).length) toast('已更新: ' + Object.keys(d.updated).join(', '));
+    if (Object.keys(d.rejected).length) toast('只读字段被忽略: ' + Object.keys(d.rejected).join(', '), true);
+    await refreshConfig();
+  } catch (e) {
+    toast('保存失败', true);
+  }
+}
+
+// ---- Chat Test ----
+let chatWs = null;
+let chatLogEl;
+
+function connectChat() {
+  chatLogEl = document.getElementById('chat-log');
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  chatWs = new WebSocket(proto + '//' + location.host + '/api/chat/ws');
+  chatWs.onopen = () => {
+    chatLogEl.innerHTML = '<span style="color:var(--muted)">已连接。输入消息开始测试。</span>';
+  };
+  chatWs.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'pong') return;
+    if (d.type === 'sent') {
+      appendBubble('user', d.text);
+    } else if (d.type === 'error') {
+      appendBubble('bot', '错误: ' + esc(d.error));
+    }
+  };
+  chatWs.onclose = () => {
+    setTimeout(connectChat, 3000);
+  };
+}
+
+function appendBubble(who, text) {
+  const el = document.createElement('div');
+  el.className = 'bubble ' + who;
+  el.textContent = text;
+  chatLogEl.appendChild(el);
+  chatLogEl.scrollTop = chatLogEl.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !chatWs || chatWs.readyState !== WebSocket.OPEN) return;
+  chatWs.send(JSON.stringify({
+    action: 'chat',
+    text: text,
+    chat_type: document.getElementById('chat-type').value,
+    user_id: 'webui-tester',
+    chat_id: 'webui-tester',
+  }));
+  input.value = '';
+}
+
+// ---- Helpers ----
+function fmtDur(s) {
+  if (s < 60) return Math.floor(s) + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm ' + Math.floor(s % 60) + 's';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+function fmtTime(iso) {
+  try { return new Date(iso).toLocaleTimeString('zh-CN'); }
+  catch (e) { return iso; }
+}
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ---- Init ----
+refreshDashboard();
+setInterval(refreshDashboard, 10000);
+connectChat();
+</script>
+</body>
+</html>
